@@ -1,9 +1,0 @@
-path: /home/lanmei/jrbp_ct_explorations/tinyissimoyolov8_cfgonly_binary/camera_B1_yolo_25inputs  # absolute path to dataset
-test: test/images
-train: train/images
-val: val/images
-
-# classes
-names:
-  0: object
-nc: 1
