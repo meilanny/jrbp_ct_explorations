@@ -1,0 +1,4 @@
+./camera_A2_yolo/
+./camera_B1_yolo/
+./camera_B1_yolo_25inputs/
+./*.png
