@@ -1,0 +1,31 @@
+{
+  "weights": "/home/lanmei/jrbp_ct_explorations/tinyissimoyolov8_cfgonly_binary/runs/tinyissimoYOLOv8-binary-fulldataset-82split-excludetest-300eps/weights/best.pt",
+  "data": "camera_A2_yolo/config.yaml",
+  "split": "test",
+  "results": {
+    "fp32": {
+      "map50": 0.7757869277845287,
+      "map": 0.6363347141684376,
+      "precision": 0.9386291434881866,
+      "recall": 0.6921487603305785
+    },
+    "fp16-onnx": {
+      "map50": 0.7774576018527342,
+      "map": 0.6305774936512483,
+      "precision": 0.962348316388431,
+      "recall": 0.6942148760330579
+    },
+    "fp16-engine": {
+      "map50": 0.7767097438474176,
+      "map": 0.6309003736969392,
+      "precision": 0.9627832432129202,
+      "recall": 0.694846337962206
+    },
+    "int8-engine": {
+      "map50": 0.7285723439347418,
+      "map": 0.5788797894048445,
+      "precision": 0.9193458024304665,
+      "recall": 0.6123235479643279
+    }
+  }
+}

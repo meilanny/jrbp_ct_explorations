@@ -119,7 +119,7 @@ def clean_speciesnet_data(speciesnet_file):
                 })
 
     # save to json
-    with open('speciesnet_labels_cleaned/speciesnet_labels_a2_cleaned.json', 'w', encoding='utf-8') as f: # data_labels/speciesnet_cleaned.json
+    with open('speciesnet_labels_cleaned/speciesnet_labels_full_cleaned.json', 'w', encoding='utf-8') as f: # data_labels/speciesnet_cleaned.json
         json.dump(new_data, f, indent=2)
 
     return 0
@@ -127,7 +127,7 @@ def clean_speciesnet_data(speciesnet_file):
 
 if __name__ == "__main__":
     JRCT_FILE = "data_labels/jrct_class.csv" # data_labels/output_modified.jsony
-    SPECIESNET_FILE = "speciesnet_labels/speciesnet_labels_a2.json"
+    SPECIESNET_FILE = "speciesnet_labels/speciesnet_labels_full.json"
 
-    clean_jrct_data(JRCT_FILE)
-    # clean_speciesnet_data(SPECIESNET_FILE)
+    # clean_jrct_data(JRCT_FILE)
+    clean_speciesnet_data(SPECIESNET_FILE)

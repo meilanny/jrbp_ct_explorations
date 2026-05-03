@@ -10,6 +10,9 @@ Original file is located at
 
 """### TinyssimoYOLOv8 - binary detection"""
 
+import os
+os.environ["CUDA_VISIBLE_DEVICES"] = "1"  # must be set before ultralytics/torch import
+
 from ultralytics import YOLO
 
 import matplotlib.pyplot as plt
@@ -28,57 +31,81 @@ from bg_subtract import BgSubtractConfig, make_bg_subtract_trainer
 #   "temporal" — diff each frame against its filename-sorted predecessor
 #   "fixed"    — diff every frame against one fixed reference image;
 #                set fixed_ref_path to an empty-scene image for this mode
-USE_BG_SUBTRACTION = True
+USE_BG_SUBTRACTION = False
 BG_SUBTRACT_CONFIG = BgSubtractConfig(
     ref_mode       = "fixed",          # "temporal" | "fixed"
     fixed_ref_path = "camera_B1_yolo/test/images/p_000037.jpg20180327.jpg",                # e.g. "camera_B1_yolo/p_000037.jpg20180327.jpg"
     use_blur       = True,
-    diff_mode      = "ssim",              # "absdiff" | "ssim"
+    diff_mode      = "absdiff",              # "absdiff" | "ssim"
     use_morph_open = True,
 )
 # ─────────────────────────────────────────────────────────────────────────────
 
 # Load the pre-trained YOLOv8m (Medium) model
 # The weights ('yolov8m.pt') will be downloaded automatically if not present
-model = YOLO("best_tinyissimoyolo_v8_on_A2_subset.pt")
+model = YOLO("runs/tinyissimoYOLOv8-binary-fulldataset-82split-excludetest-300eps/weights/best.pt")
 
 # Fine-tune the model
 print("Starting finetuning...")
 
+
+# 8/2 inputs, default config
 results = model.train(
     data="/home/lanmei/jrbp_ct_explorations/tinyissimoyolov8_cfgonly_binary/camera_B1_yolo/config.yaml",  # Path to your YAML configuration file
     epochs=200,               # Number of training epochs (adjust as needed)
     imgsz=640,                # Image size for training (640 is default)
-    batch=16,                 # Batch size (reduce if you get Out of Memory errors)
+    batch=32,                 # Batch size (reduce if you get Out of Memory errors)
     lr0=0.0001, # default 0.01
     lrf=0.01, # default 0.01
     device='1',                 # GPU device index (use 'cpu' if you don't have a GPU)
     project='/home/lanmei/jrbp_ct_explorations/tinyissimoyolov8_cfgonly_binary/runs/',
-    name="tinyissimoYOLOv8-binary-best_500eps_on_A1-preprocessBGall-ref37-finetune_on_B1_82split-200eps",    # Name of the folder where results will be saved
+    name="tinyissimoYOLOv8-binary-fulldataset-82split-A2-300eps-finetune-82split-on-B1-200eps",    # Name of the folder where results will be saved
     **({"trainer": make_bg_subtract_trainer(BG_SUBTRACT_CONFIG)} if USE_BG_SUBTRACTION else {}),
 )
 
 '''
+
+# 25 inputs, default config
 results = model.train(
     data="/home/lanmei/jrbp_ct_explorations/tinyissimoyolov8_cfgonly_binary/camera_B1_yolo_25inputs/config.yaml",  # Path to your YAML configuration file
-    epochs=300,
+    epochs=200,               # Number of training epochs (adjust as needed)
+    imgsz=640,                # Image size for training (640 is default)
+    batch=32,                 # Batch size (reduce if you get Out of Memory errors)
+    lr0=0.0001, # default 0.01
+    lrf=0.01, # default 0.01
+    device='1',                 # GPU device index (use 'cpu' if you don't have a GPU)
+    project='/home/lanmei/jrbp_ct_explorations/tinyissimoyolov8_cfgonly_binary/runs/',
+    name="tinyissimoYOLOv8-binary-fulldataset-82split-A2-300eps-finetune-25-on-B1-200eps",    # Name of the folder where results will be saved
+    **({"trainer": make_bg_subtract_trainer(BG_SUBTRACT_CONFIG)} if USE_BG_SUBTRACTION else {}),
+)
+
+# 25 inputs, alternate config
+results = model.train(
+    data="/home/lanmei/jrbp_ct_explorations/tinyissimoyolov8_cfgonly_binary/camera_B1_yolo_25inputs/config.yaml",  # Path to your YAML configuration file
+    epochs=200,
     imgsz=640,
-    batch=8                # Smaller batch size for tiny datasets
-    lr0=0.001,             # Much lower initial learning rate
+    batch=4,                # Smaller batch size for tiny datasets
+    lr0=0.0001,             # Much lower initial learning rate
     patience=30,
     freeze=10,             # Freeze the backbone
     warmup_epochs=0,       # Skip warmup
     optimizer='AdamW',     # Better optimizer for fine-tuning
     weight_decay=0.01,     # Heavier regularization to prevent overfitting
     mosaic=0.5,            # Reduce mosaic augmentation
-    close_mosaic=20,       # Turn off mosaic for the last 20 epochs
+    close_mosaic=20,       # Turn off mosaic for the last 20 epochsproject='/home/lanmei/jrbp_ct_explorations/tinyissimoyolov8_cfgonly_binary/runs/',
+    device='1',
+    name="tinyissimoYOLOv8-binary-fulldataset-82split-A2-300eps-finetune-25-on-B1-200eps-cfg2",    # Name of the folder where results will be saved
+    **({"trainer": make_bg_subtract_trainer(BG_SUBTRACT_CONFIG)} if USE_BG_SUBTRACTION else {}),
 )
+
 '''
 print("Training complete! Evaluating model...")
 
 # Evaluate the model's performance on the validation set
 metrics = model.val(project='/home/lanmei/jrbp_ct_explorations/tinyissimoyolov8_cfgonly_binary/runs/',
-                    name="tinyissimoYOLOv8-binary-best_500eps_on_A1-preprocessBGall-ref37-finetune_on_B1_82split-200eps-val")
+                    name="tinyissimoYOLOv8-binary-fulldataset-82split-A2-300eps-finetune-82split-on-B1-200eps-val",
+                    device="1",
+                    )
 
 # Run a quick prediction on a test image to verify
 # model.predict("path/to/a/test/image.jpg", save=True)
@@ -94,7 +121,7 @@ test_metrics = model.val(
     data="/home/lanmei/jrbp_ct_explorations/tinyissimoyolov8_cfgonly_binary/camera_B1_yolo/config.yaml",
     split="test",
     project="/home/lanmei/jrbp_ct_explorations/tinyissimoyolov8_cfgonly_binary/runs/",
-    name="tinyissimoYOLOv8-binary-best_500eps_on_A1-preprocessBGall-ref37-finetune_on_B1_82split-200eps-test",
+    name="tinyissimoYOLOv8-binary-fulldataset-82split-A2-300eps-finetune-82split-on-B1-200eps-test-on-B1",
     device="1",
 ) # tinyissimoYOLOv8-binary-500eps-test
 
@@ -153,6 +180,6 @@ legend = [Line2D([0], [0], color="lime", lw=2, label="Ground truth"),
           Line2D([0], [0], color="red",  lw=2, label="Prediction")]
 fig.legend(handles=legend, loc="lower center", ncol=2, fontsize=10)
 plt.tight_layout()
-plt.savefig("test-tinyissimoYOLOv8-binary-best_500eps_on_A1-preprocessBGall-ref37-finetune_on_B1_82split-200eps.png")
-plt.show()
+plt.savefig("test_tinyissimoYOLOv8-binary-fulldataset-82split-A2-300eps-finetune-82split-on-B1-200eps-test-on-B1.png")
+# plt.show()
 

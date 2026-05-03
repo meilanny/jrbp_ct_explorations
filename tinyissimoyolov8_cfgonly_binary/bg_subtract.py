@@ -58,7 +58,7 @@ class BgSubtractConfig:
     blur_sigma: int              = 0        # 0 → auto-computed by cv2
 
     # Difference mode
-    diff_mode: str               = "ssim"   # "absdiff" | "ssim"
+    diff_mode: str               = "absdiff"   # "absdiff" | "ssim"
 
     # absdiff: pixel diff > threshold → foreground
     absdiff_thresh: int          = 25
@@ -268,3 +268,58 @@ def make_bg_subtract_trainer(bg_cfg: BgSubtractConfig | None = None):
             )
 
     return BgSubtractDetectionTrainer
+
+
+def make_bg_subtract_validator(bg_cfg: BgSubtractConfig | None = None):
+    """Return a DetectionValidator subclass that uses background subtraction.
+
+    Parameters
+    ----------
+    bg_cfg : BgSubtractConfig, or None to use defaults
+
+    Returns
+    -------
+    A DetectionValidator subclass; swap it into ``model.task_map`` before
+    calling ``model.val()``.
+
+    Example
+    -------
+        Validator = make_bg_subtract_validator(BgSubtractConfig(diff_mode="ssim"))
+        model.task_map[model.task]["validator"] = Validator
+        model.val(data="config.yaml", ...)
+    """
+    if bg_cfg is None:
+        bg_cfg = BgSubtractConfig()
+
+    BgSubtractDataset = _make_bg_subtract_dataset_class(bg_cfg)
+
+    from ultralytics.models.yolo.detect import DetectionValidator
+    from ultralytics.utils.torch_utils import unwrap_model
+
+    class BgSubtractDetectionValidator(DetectionValidator):
+        def build_dataset(self, img_path, mode="val", batch=None):
+            from ultralytics.utils import colorstr
+
+            gs = max(
+                int(unwrap_model(self.model).stride.max() if self.model else 0),
+                32,
+            )
+            return BgSubtractDataset(
+                img_path=img_path,
+                imgsz=self.args.imgsz,
+                batch_size=batch,
+                augment=False,
+                hyp=self.args,
+                rect=self.args.rect or True,
+                cache=self.args.cache or None,
+                single_cls=self.args.single_cls or False,
+                stride=int(gs),
+                pad=0.5,
+                prefix=colorstr(f"{mode}: "),
+                task=self.args.task,
+                classes=self.args.classes,
+                data=self.data,
+                fraction=1.0,
+            )
+
+    return BgSubtractDetectionValidator

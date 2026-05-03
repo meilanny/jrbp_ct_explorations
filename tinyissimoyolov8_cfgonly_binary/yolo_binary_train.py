@@ -44,14 +44,14 @@ model = YOLO("/home/lanmei/jrbp_ct_explorations/tinyissimoyolov8_cfgonly_binary/
 
 # Fine-tune the model
 print("Starting training...")
-results = model.train(
-    data="/home/lanmei/jrbp_ct_explorations/tinyissimoyolov8_cfgonly_binary/camera_A2_yolo/config.yaml",  # Path to your YAML configuration file
-    epochs=300,               # Number of training epochs (adjust as needed)
+results = model.train( # camera_A2_yolo
+    data="/home/lanmei/jrbp_ct_explorations/tinyissimoyolov8_cfgonly_binary/all_cameras_yolo/config.yaml",  # Path to your YAML configuration file
+    epochs=200,               # Number of training epochs (adjust as needed)
     imgsz=640,                # Image size for training (640 is default)
-    batch=128,                 # Batch size (reduce if you get Out of Memory errors)
+    batch=256,                 # 128 Batch size (reduce if you get Out of Memory errors)
     device='1',                 # GPU device index (use 'cpu' if you don't have a GPU)
     project='/home/lanmei/jrbp_ct_explorations/tinyissimoyolov8_cfgonly_binary/runs/',
-    name="tinyissimoYOLOv8-binary-fulldataset-82split-excludetest-300eps",    # Name of the folder where results will be saved
+    name="tinyissimoYOLOv8-binary-allJRBPdata-8train1val1test-excludetest-200eps-imgsz640", # tinyissimoYOLOv8-binary-fulldataset-82split-excludetest-300eps    # Name of the folder where results will be saved
     **({"trainer": make_bg_subtract_trainer(BG_SUBTRACT_CONFIG)} if USE_BG_SUBTRACTION else {}),
 )
 
@@ -59,13 +59,13 @@ print("Training complete! Evaluating model...")
 
 # Evaluate the model's performance on the validation set
 metrics = model.val(project='/home/lanmei/jrbp_ct_explorations/tinyissimoyolov8_cfgonly_binary/runs/',
-                    name="tinyissimoYOLOv8-binary-fulldataset-82split-excludetest-300eps-val")
+                    name="tinyissimoYOLOv8-binary-allJRBPdata-8train1val1test-excludetest-200eps-imgsz640-val") # tinyissimoYOLOv8-binary-fulldataset-82split-excludetest-300eps-val
 
 # Run a quick prediction on a test image to verify
 # model.predict("path/to/a/test/image.jpg", save=True)
 
-TEST_IMAGES_DIR = Path("/home/lanmei/jrbp_ct_explorations/tinyissimoyolov8_cfgonly_binary/camera_A2_yolo/test/images")
-TEST_LABELS_DIR = Path("/home/lanmei/jrbp_ct_explorations/tinyissimoyolov8_cfgonly_binary/camera_A2_yolo/test/labels")
+TEST_IMAGES_DIR = Path("/home/lanmei/jrbp_ct_explorations/tinyissimoyolov8_cfgonly_binary/all_cameras_yolo/test/images")
+TEST_LABELS_DIR = Path("/home/lanmei/jrbp_ct_explorations/tinyissimoyolov8_cfgonly_binary/all_cameras_yolo/test/labels")
 
 # ── 1. Load best checkpoint ───────────────────────────────────────────────────
 test_model = model
@@ -73,10 +73,10 @@ test_model = model
 # ── 2. Quantitative evaluation on the test split ──────────────────────────────
 print("Evaluating on test set...")
 test_metrics = test_model.val(
-    data="/home/lanmei/jrbp_ct_explorations/tinyissimoyolov8_cfgonly_binary/camera_A2_yolo/config.yaml",
+    data="/home/lanmei/jrbp_ct_explorations/tinyissimoyolov8_cfgonly_binary/all_cameras_yolo/config.yaml",
     split="test",
     project="/home/lanmei/jrbp_ct_explorations/tinyissimoyolov8_cfgonly_binary/runs/",
-    name="tinyissimoYOLOv8-binary-fulldataset-82split-excludetest-300eps-test-on-A2",
+    name="tinyissimoYOLOv8-binary-allJRBPdata-8train1val1test-excludetest-200eps-imgsz640-test",
     device="1",
 )
 
@@ -135,6 +135,6 @@ legend = [Line2D([0], [0], color="lime", lw=2, label="Ground truth"),
           Line2D([0], [0], color="red",  lw=2, label="Prediction")]
 fig.legend(handles=legend, loc="lower center", ncol=2, fontsize=10)
 plt.tight_layout()
-plt.savefig("test_tinyissimoYOLOv8-binary-fulldatasetA2-82split-excludetest-300eps-on-A2.png")
+plt.savefig("tinyissimoYOLOv8-binary-allJRBPdata-8train1val1test-excludetest-200eps-imgsz640-test.png")
 plt.show()
 

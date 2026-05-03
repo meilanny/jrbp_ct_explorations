@@ -17,13 +17,23 @@ bounding boxes in the same format produced by predict_batch.py:
     ]
 
 Usage:
-    python convert_speciesnet_labels.py \
+    python convert_speciesnet_labels_binary.py \
         --input  ../speciesnet_labels_cleaned/speciesnet_labels_b1_cleaned.json \
         --output ../speciesnet_labels_cleaned_binary/                     \
         --image_root /data/JR_CAMERA_TRAPS/images
 
-    python convert_speciesnet_labels.py \
+    python convert_speciesnet_labels_binary.py \
         --input  ../speciesnet_labels_cleaned/speciesnet_labels_a2_cleaned.json \
+        --output ../speciesnet_labels_cleaned_binary/  \
+        --image_root /data/JR_CAMERA_TRAPS/images
+
+    python convert_speciesnet_labels_binary.py \
+        --input  ../speciesnet_labels_cleaned/speciesnet_labels_b2_cleaned.json \
+        --output ../speciesnet_labels_cleaned_binary/  \
+        --image_root /data/JR_CAMERA_TRAPS/images
+
+    python convert_speciesnet_labels_binary.py \
+        --input  ../speciesnet_labels_cleaned/speciesnet_labels_full_cleaned.json \
         --output ../speciesnet_labels_cleaned_binary/  \
         --image_root /data/JR_CAMERA_TRAPS/images
 """

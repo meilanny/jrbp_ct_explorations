@@ -6,7 +6,7 @@ from ultralytics import YOLO
 # ── Configuration ─────────────────────────────────────────────────────────────
 
 USE_BLUR  = True          # apply GaussianBlur before computing diff
-DIFF_MODE = "ssim"     # "absdiff" | "ssim"
+DIFF_MODE = "absdiff"     # "absdiff" | "ssim"
 
 BLUR_KERNEL   = (21, 21)  # GaussianBlur kernel size (odd values only)
 BLUR_SIGMA    = 0         # 0 → auto-computed by cv2
@@ -85,27 +85,29 @@ def build_mask(diff: np.ndarray, mode: str) -> np.ndarray:
 
 # ── Main ──────────────────────────────────────────────────────────────────────
 
-# model = YOLO('runs/tinyissimoYOLOv8-binary-500eps'
-#             '/weights/best.pt') 
+model = YOLO('runs/tinyissimoYOLOv8-binary-best_500eps_on_A1-preprocessBG_abs_all-ref37-finetune_on_B1_82split-200eps'
+            '/weights/best.pt') 
 
-# model = YOLO('tinyissimoYOLOv8-binary-fulldataset-82split-excludetest-500eps4'
+# model = YOLO('runs/tinyissimoYOLOv8-binary-fulldataset-82split-excludetest-500eps'
 #             '/weights/best_100.pt')
 
-model = YOLO('best_tinyissimoyolo_v8_on_A2_subset.pt')
-
-# ref_img    = cv2.imread('/home/lanmei/jrbp_ct_explorations/'
-#                         'tinyissimoyolov8_cfgonly_binary/'
-#                         'camera_B1_yolo/test/images/p_000002.jpg20180327.jpg')
-# target_img = cv2.imread('/home/lanmei/jrbp_ct_explorations/'
-#                         'tinyissimoyolov8_cfgonly_binary/'
-#                         'camera_B1_yolo/test/images/p_000003.jpg20180327.jpg')
+# model = YOLO('best_tinyissimoyolo_v8_on_A2_subset.pt')
 
 ref_img    = cv2.imread('/home/lanmei/jrbp_ct_explorations/'
                         'tinyissimoyolov8_cfgonly_binary/'
-                        'camera_B1_yolo/test/images/p_000045.jpg20180327.jpg')
+                        'camera_B1_yolo/test/images/p_000037.jpg20180327.jpg') # p_000002 # p_000037
+target_img = cv2.imread('/home/lanmei/jrbp_ct_explorations/'
+                        'tinyissimoyolov8_cfgonly_binary/'
+                        'camera_B1_yolo/test/images/p_000025.jpg20180327.jpg') # p_000003
+
+'''
+ref_img    = cv2.imread('/home/lanmei/jrbp_ct_explorations/'
+                        'tinyissimoyolov8_cfgonly_binary/'
+                        'camera_B1_yolo/test/images/p_000045.jpg20180327.jpg') # p_000037
 target_img = cv2.imread('/home/lanmei/jrbp_ct_explorations/'
                         'tinyissimoyolov8_cfgonly_binary/'
                         'camera_B1_yolo/test/images/p_000044.jpg20180327.jpg')
+'''                     
 
 
 if ref_img.shape != target_img.shape:

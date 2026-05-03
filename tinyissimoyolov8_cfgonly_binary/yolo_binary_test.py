@@ -11,31 +11,65 @@ Original file is located at
 """### TinyssimoYOLOv8 - binary detection"""
 
 from ultralytics import YOLO
+import torch; torch.cuda.init()  # force CUDA init before onnxruntime deferred-check interferes
 
+import cv2
 import matplotlib.pyplot as plt
 import matplotlib.patches as patches
 from matplotlib.lines import Line2D
 from pathlib import Path
 from PIL import Image
+import os
+
+from bg_subtract import BgSubtractConfig, apply_subtraction, make_bg_subtract_validator
+
+os.environ["CUDA_VISIBLE_DEVICES"] = "1"  # must be set before ultralytics/torch import
+
+# ── Background subtraction (optional preprocessing) ───────────────────────────
+# Set USE_BG_SUBTRACTION = True to apply background subtraction on-the-fly
+# during both quantitative val and the visual spot-check predictions.
+#
+# ref_mode options:
+#   "temporal" — diff each frame against its filename-sorted predecessor
+#   "fixed"    — diff every frame against one fixed reference image;
+#                set fixed_ref_path to an empty-scene image for this mode
+USE_BG_SUBTRACTION = False
+BG_SUBTRACT_CONFIG = BgSubtractConfig(
+    ref_mode       = "fixed",          # "temporal" | "fixed"
+    fixed_ref_path = "camera_B1_yolo/test/images/p_000037.jpg20180327.jpg",             # e.g. "camera_A2_yolo/ref.jpg"
+    use_blur       = True,
+    diff_mode      = "absdiff",           # "absdiff" | "ssim"
+    use_morph_open = True,
+)
+# ─────────────────────────────────────────────────────────────────────────────
 
 # ── Paths ─────────────────────────────────────────────────────────────────────
-TEST_IMAGES_DIR = Path("/home/lanmei/jrbp_ct_explorations/tinyissimoyolov8_cfgonly_binary/camera_B1_yolo/test/images")
-TEST_LABELS_DIR = Path("/home/lanmei/jrbp_ct_explorations/tinyissimoyolov8_cfgonly_binary/camera_B1_yolo/test/labels")
+TEST_IMAGES_DIR = Path("/home/lanmei/jrbp_ct_explorations/tinyissimoyolov8_cfgonly_binary/camera_A2_yolo/test/images")
+TEST_LABELS_DIR = Path("/home/lanmei/jrbp_ct_explorations/tinyissimoyolov8_cfgonly_binary/camera_A2_yolo/test/labels")
 
 # Load the pre-trained YOLOv8m (Medium) model
 # The weights ('yolov8m.pt') will be downloaded automatically if not present
 # model = YOLO("best_tinyissimoyolo_v8.pt") 
-model = YOLO("runs/tinyissimoYOLOv8-binary-best_500eps_on_A1-finetune_on_B1_82split-200eps/weights/best.pt")
-
+model = YOLO("runs/tinyissimoYOLOv8-binary-fulldataset-82split-excludetest-300eps/weights/best.pt")
+# tinyissimoYOLOv8-binary-fulldataset-82split-excludetest-300eps 
 # ── 2. Quantitative evaluation on the test split ──────────────────────────────
 print("Evaluating on test set...")
+
+# Swap in the bg-subtract validator, then restore the original afterwards.
+if USE_BG_SUBTRACTION:
+    _orig_validator = model.task_map[model.task]["validator"]
+    model.task_map[model.task]["validator"] = make_bg_subtract_validator(BG_SUBTRACT_CONFIG)
+
 test_metrics = model.val(
-    data="/home/lanmei/jrbp_ct_explorations/tinyissimoyolov8_cfgonly_binary/camera_B1_yolo/config.yaml",
+    data="/home/lanmei/jrbp_ct_explorations/tinyissimoyolov8_cfgonly_binary/camera_A2_yolo/config.yaml",
     split="test",
     project="/home/lanmei/jrbp_ct_explorations/tinyissimoyolov8_cfgonly_binary/runs/",
-    name="tinyissimoYOLOv8-binary-best_500eps_on_A1-finetune_on_B1_82split-200eps-test",
+    name="tinyissimoYOLOv8-binary-fulldataset-82split-excludetest-300eps-test-on-A2-retry",
     device="1",
 )
+
+if USE_BG_SUBTRACTION:
+    model.task_map[model.task]["validator"] = _orig_validator
 
 print(f"\n── Test-set metrics ──────────────────────────")
 print(f"  mAP@0.50      : {test_metrics.box.map50:.4f}")
@@ -54,6 +88,11 @@ test_images = sorted(TEST_IMAGES_DIR.glob("*.jpg"))[:6]
 fig, axes = plt.subplots(2, 3, figsize=(15, 8))
 fig.suptitle("Test set — predictions (red) vs ground truth (green)", fontsize=13)
 
+# For fixed mode: load the reference once outside the loop.
+if USE_BG_SUBTRACTION and BG_SUBTRACT_CONFIG.ref_mode == "fixed":
+    _fixed_ref_bgr = cv2.imread(BG_SUBTRACT_CONFIG.fixed_ref_path)
+_prev_bgr = None  # for temporal mode
+
 for ax, img_path in zip(axes.flat, test_images):
     img = Image.open(img_path)
     W, H = img.size
@@ -67,10 +106,24 @@ for ax, img_path in zip(axes.flat, test_images):
             if len(parts) == 5:
                 gt_boxes.append([float(v) for v in parts[1:]])
 
-    # Model predictions
-    preds = model.predict(str(img_path), conf=0.25, verbose=False)[0]
+    # Model predictions (with optional bg subtraction)
+    if USE_BG_SUBTRACTION:
+        target_bgr = cv2.imread(str(img_path))
+        if BG_SUBTRACT_CONFIG.ref_mode == "fixed":
+            predict_input = apply_subtraction(_fixed_ref_bgr, target_bgr, BG_SUBTRACT_CONFIG)
+        else:  # temporal
+            predict_input = (
+                apply_subtraction(_prev_bgr, target_bgr, BG_SUBTRACT_CONFIG)
+                if _prev_bgr is not None else target_bgr
+            )
+            _prev_bgr = target_bgr
+        preds = model.predict(predict_input, conf=0.25, verbose=False)[0]
+        display_img = cv2.cvtColor(predict_input, cv2.COLOR_BGR2RGB)
+    else:
+        preds = model.predict(str(img_path), conf=0.25, verbose=False)[0]
+        display_img = img
 
-    ax.imshow(img)
+    ax.imshow(display_img)
     ax.set_title(img_path.name, fontsize=7)
     ax.axis("off")
 
@@ -92,6 +145,5 @@ legend = [Line2D([0], [0], color="lime", lw=2, label="Ground truth"),
           Line2D([0], [0], color="red",  lw=2, label="Prediction")]
 fig.legend(handles=legend, loc="lower center", ncol=2, fontsize=10)
 plt.tight_layout()
-plt.savefig("test-tinyissimoYOLOv8-binary-best_500eps_on_A1-finetune_on_B1_82split-200eps.png")
-plt.show()
+plt.savefig("tinyissimoYOLOv8-binary-fulldataset-82split-excludetest-300eps-test-on-A2-retry.png")
 

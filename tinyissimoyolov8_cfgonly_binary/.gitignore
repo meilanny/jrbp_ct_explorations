@@ -1,5 +1,7 @@
 camera_A2_yolo/
 camera_B1_yolo/
 camera_B1_yolo_25inputs/
+all_cameras_yolo/
+camera_B2_yolo_34inputstrain_01/
 __pycache__/
 *.png

@@ -1,0 +1,22 @@
+description: Ultralytics tinyissimo-v8 model trained on /home/lanmei/jrbp_ct_explorations/tinyissimoyolov8_cfgonly_binary/camera_A2_yolo/config.yaml
+author: Ultralytics
+date: '2026-04-27T16:37:26.359095'
+version: 8.4.37
+license: AGPL-3.0 License (https://ultralytics.com/license)
+docs: https://docs.ultralytics.com
+stride: 32
+task: detect
+batch: 1
+imgsz:
+- 256
+- 256
+names:
+  0: object
+args:
+  batch: 1
+  fraction: 0.02
+  half: false
+  int8: true
+  nms: false
+channels: 3
+end2end: false

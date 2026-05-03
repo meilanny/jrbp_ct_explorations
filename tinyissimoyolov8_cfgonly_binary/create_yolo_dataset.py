@@ -43,6 +43,13 @@ Usage
     --labels ../speciesnet_labels_cleaned_binary/speciesnet_labels_a2_cleaned_boxes_20260414_183450.json \
     --output ~/jrbp_ct_explorations/tinyissimoyolov8_cfgonly_binary/camera_A2_yolo \
     --train_ratio 0.8
+   
+   CUDA_VISIBLE_DEVICES=1
+    python create_yolo_dataset.py \
+    --image_dir /data/JR_CAMERA_TRAPS/images/CAMERA_ARRAY_B/camera_B2 \
+    --labels ../speciesnet_labels_cleaned_binary/speciesnet_labels_b2_cleaned_boxes_20260415_213737.json \
+    --output ~/jrbp_ct_explorations/tinyissimoyolov8_cfgonly_binary/camera_B2_yolo \
+    --train_ratio 0.1  #test: ("p_0004", "p_0005")
 
 """
 
@@ -65,7 +72,7 @@ def _hash_to_float(s: str, seed: int = 0) -> float:
 def assign_split(path: str, seed: int = 123, train_ratio: float = 0.8) -> str:
     """Return 'test', 'train', or 'val' for a given image path."""
     stem = Path(path).name  # use filename so hash is path-independent
-    if stem.startswith("p_000"):
+    if stem.startswith(("p_0004", "p_0005")): # "p_000", 
         return "test"
     val = _hash_to_float(path, seed=seed)
     return "train" if val < train_ratio else "val"
